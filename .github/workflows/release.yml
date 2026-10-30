@@ -1,0 +1,70 @@
+name: 'C++ CI/CD'
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - feature/github_actions
+
+permissions: write-all
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPATCH_VERSION=${{ github.run_number }}
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Debug — list build tree
+        run: |
+          find build -type f -name "lab3*" || echo "not found"
+        shell: bash
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: lab3-${{ matrix.os }}
+          path: |
+            build/**/ProgramLab3
+            build/**/ProgramLab3.exe
+          if-no-files-found: error
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+
+      - name: List downloaded files (debug)
+        run: ls -R artifacts || echo "No artifacts found"
+        shell: bash
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
