@@ -17,13 +17,13 @@ private:
         };
 
         freenode *free_list = nullptr; 
-        std::vector<void *> allocatebBlock;
+        std::vector<void *> allocatedBlock;
 
         Pool() = default;
 
         ~Pool() 
         {
-            for (void *block : allocatebBlock) {
+            for (void *block : allocatedBlock) {
                 ::operator delete(block);
             }
         }
@@ -32,7 +32,7 @@ private:
             if (n != 1) 
             {
                 void *p = ::operator new(n * sizeof(T));
-                allocatebBlock.push_back(p);
+                allocatedBlock.push_back(p);
                 return p;
             }
 
@@ -40,7 +40,7 @@ private:
             {
                 size_t allocateSize = Block_size * sizeof(T);
                 void *new_block = ::operator new(allocateSize);
-                allocatebBlock.push_back(new_block);
+                allocatedBlock.push_back(new_block);
 
                 char *ptr = static_cast<char *>(new_block);
                 for (size_t i = 0; i < Block_size; ++i)
