@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <iostream>
+#include <limits>
 #include "lib.hpp"
 
 template <typename T, size_t Block_size = 10>
@@ -16,31 +17,48 @@ private:
             freenode *next;
         };
 
+        std::size_t total_bytes_allocated = 0;
+        std::size_t total_bytes_deallocated = 0;
+
         freenode *free_list = nullptr; 
         std::vector<void *> allocatedBlock;
 
         Pool() = default;
 
         ~Pool() 
-        {
+        {   
+            std::cout << "Allocated memory: " << total_bytes_allocated << " bytes" << std::endl;
+            std::cout << "Deallocated memory: " << total_bytes_deallocated << " bytes" << std::endl;
+
             for (void *block : allocatedBlock) {
                 ::operator delete(block);
             }
         }
 
         void *allocate(size_t n) {
+            if (n == 0) {
+                return nullptr;
+            }
+            
+            if (n > std::numeric_limits<std::size_t>::max() / sizeof(T)) {
+                throw std::bad_alloc(); 
+            }
+
             if (n != 1) 
             {
                 void *p = ::operator new(n * sizeof(T));
                 allocatedBlock.push_back(p);
+                total_bytes_allocated += (n * sizeof(T));
                 return p;
             }
 
             if (free_list == nullptr) 
             {
-                size_t allocateSize = Block_size * sizeof(T);
-                void *new_block = ::operator new(allocateSize);
+                size_t allocatedSize = Block_size * sizeof(T);
+                void *new_block = ::operator new(allocatedSize);
                 allocatedBlock.push_back(new_block);
+
+                total_bytes_allocated += allocatedSize;
 
                 char *ptr = static_cast<char *>(new_block);
                 for (size_t i = 0; i < Block_size; ++i)
@@ -55,12 +73,16 @@ private:
             return node;
         }
 
-        void deallocate(void *p, size_t n) { 
+        void deallocate(void *p, size_t n) {
             if (n != 1) 
             {
+                total_bytes_deallocated += n * sizeof(T);
+
                 ::operator delete(p);
                 return;
             }
+            total_bytes_deallocated += sizeof(T);
+
             freenode *node = static_cast<freenode *>(p);
             node->next = free_list;
             free_list = node;
