@@ -1,10 +1,5 @@
-#include <cstddef>
 #include <utility>
 #include <memory>
-
-int factorial(int n);
-
-
 
 template <typename T, typename Alloc = std::allocator<T>>
 class ForwardList {
