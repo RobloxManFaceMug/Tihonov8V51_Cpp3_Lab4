@@ -31,16 +31,16 @@ jobs:
 
       - name: Debug — list build tree
         run: |
-          find build -type f -name "helloworld*" || echo "not found"
+          find build -type f -name "ProgramLab4*" || echo "not found"
         shell: bash
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: helloworld-${{ matrix.os }}
+          name: ProgramLab4-${{ matrix.os }}
           path: |
-            build/**/helloworld
-            build/**/helloworld.exe
+            build/**/ProgramLab4
+            build/**/ProgramLab4.exe
           if-no-files-found: error
 
   release:
